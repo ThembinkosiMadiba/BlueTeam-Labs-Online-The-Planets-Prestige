@@ -18,7 +18,7 @@ The email arrived with a vague subject line, a mismatched Reply-To address, and 
 
 The investigation confirmed this is a **phishing email with a potential malware delivery component**, targeting recipients through Apple brand impersonation.
 
-![Email Overview](Screenshots/01_email_header_mxtoolbox.jpg)
+![Email Overview](screenshots/01-email-header-mxtoolbox.jpeg)
 
 ---
 
@@ -68,7 +68,7 @@ SPF failure confirms the sending IP is not an authorized mail server for the cla
 
 > **Note:** Triple authentication failure (SPF + DKIM + no DMARC) is one of the strongest technical signals that an email is fraudulent.
 
-![MXToolbox Authentication Results](Screenshots/02_mxtoolbox_auth_results.jpg)
+![MXToolbox Authentication Results](screenshots/Challenge.png)
 
 ---
 
@@ -80,7 +80,7 @@ The email contained an attachment encoded in **Base64** — a common obfuscation
 
 The Base64 content was extracted and loaded into **CyberChef**. The `From Base64` operation was applied first to decode the raw bytes, followed by the **`To Hex`** operation to render the output in hexadecimal — this is the critical step for identifying the true file type regardless of what the email claims the attachment to be.
 
-![CyberChef Base64 + Hex Output](Screenshots/03_cyberchef_base64_decode.jpg)
+![CyberChef Base64 + Hex Output](screenshots/cyberchef-base64-decode.jpeg)
 
 ### Step 2 — File Signature Identification via Gary Kessler's Table
 
@@ -128,7 +128,7 @@ With the file correctly identified as a ZIP archive, it was extracted. The conte
 
 The originating IP belongs to a commercial VPS provider in Latvia — a jurisdiction with no plausible connection to an Apple-branded sender. Threat actors routinely use VPS providers for phishing infrastructure due to easy provisioning and relative anonymity. The IP has no established reputation as a legitimate mail server, which further confirms fraudulent origin.
 
-![DomainTools IP Lookup](Screenshots/04_domaintools_ip_lookup.jpg)
+![DomainTools IP Lookup](screenshots/domaintools-ip-lookup.jpeg)
 
 ---
 
@@ -222,7 +222,7 @@ The email is malicious. All associated IOCs should be actioned across relevant s
 
 ## 12. Certification
 
-![BlueTeam Labs Certificate](Screenshots/certificate_btlo.jpg)
+![BlueTeam Labs Certificate](screenshots/certificate-btlo.png)
 
 | Field                | Details                                                                          |
 |----------------------|----------------------------------------------------------------------------------|
