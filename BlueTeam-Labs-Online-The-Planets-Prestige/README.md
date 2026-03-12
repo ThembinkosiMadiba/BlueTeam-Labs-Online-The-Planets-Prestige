@@ -18,7 +18,7 @@ The email arrived with a vague subject line, a mismatched Reply-To address, and 
 
 The investigation confirmed this is a **phishing email with a potential malware delivery component**, targeting recipients through Apple brand impersonation.
 
-![Email Overview](screenshots/01-email-header-mxtoolbox.jpeg)
+![MXToolbox Authentication Results](screenshots/Challenge.png)
 
 ---
 
@@ -68,7 +68,7 @@ SPF failure confirms the sending IP is not an authorized mail server for the cla
 
 > **Note:** Triple authentication failure (SPF + DKIM + no DMARC) is one of the strongest technical signals that an email is fraudulent.
 
-![MXToolbox Authentication Results](screenshots/Challenge.png)
+![Email Overview](screenshots/01-email-header-mxtoolbox.jpeg)
 
 ---
 
@@ -263,3 +263,4 @@ The email is malicious. All associated IOCs should be actioned across relevant s
 | **Gary Kessler's File Signatures**| Magic bytes reference for true file type verification           |
 | **DomainTools**                   | IP intelligence and geolocation lookup                          |
 | **BlueTeam Labs Online**          | CTF challenge platform                                          |
+
