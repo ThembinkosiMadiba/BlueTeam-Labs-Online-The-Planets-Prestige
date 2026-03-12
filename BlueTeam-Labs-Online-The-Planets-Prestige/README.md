@@ -1,385 +1,265 @@
-# 🔍 Phishing Email Investigation — SOC Analysis Case Study
+# Phishing Email Investigation – The Planet's Prestige (BTLO)
 
-### BlueTeam Labs Online | The Planet's Prestige
-
-> **Platform:** BlueTeam Labs Online  
-> **Challenge:** The Planet's Prestige  
-> **Category:** CTF / Email Forensics  
-> **Difficulty:** Easy  
-> **Points:** 10  
-> **Completed:** March 12, 2026  
-> **Status:** ✅ Completed
+**Platform:** BlueTeam Labs Online  
+**Challenge:** The Planet's Prestige  
+**Category:** CTF / Email Forensics  
+**Difficulty:** Easy  
+**Points:** 10  
+**Completed:** March 12, 2026  
+**Status:** Closed – True Positive
 
 ---
 
-## Table of Contents
+## 1. Incident Overview
 
-1. [Introduction](#introduction)
-2. [Investigation Overview](#investigation-overview)
-3. [Email Metadata Analysis](#email-metadata-analysis)
-4. [Email Authentication Analysis](#email-authentication-analysis)
-5. [Base64 Payload Analysis](#base64-payload-analysis)
-6. [IP Address Investigation](#ip-address-investigation)
-7. [Indicators of Compromise (IOCs)](#indicators-of-compromise-iocs)
-8. [Attack Analysis](#attack-analysis)
-9. [Detection and Mitigation](#detection-and-mitigation)
-10. [Conclusion](#conclusion)
-11. [Screenshots](#screenshots)
-12. [Certification](#certification)
-13. [Skills Demonstrated](#skills-demonstrated)
-14. [Tools Used](#tools-used)
+A suspicious email was submitted for analysis as part of the **The Planet's Prestige** CTF challenge on **BlueTeam Labs Online**. The task simulated a real-world SOC phishing triage workflow.
+
+The email arrived with a vague subject line, a mismatched Reply-To address, and a **Base64-encoded attachment**. Full header analysis, authentication verification, payload decoding, and IP intelligence gathering were performed to determine whether the email was malicious.
+
+The investigation confirmed this is a **phishing email with a potential malware delivery component**, targeting recipients through Apple brand impersonation.
+
+![Email Overview](Screenshots/01_email_header_mxtoolbox.jpg)
 
 ---
 
-## Introduction
+## 2. Alert Metadata
 
-This case study documents a hands-on phishing email investigation completed as part of the **"The Planet's Prestige"** CTF challenge on **Blue Team Labs Online**. The objective was to simulate a real-world SOC (Security Operations Center) analyst workflow by examining a suspicious email flagged for potential phishing activity.
-
-The investigation involved a full forensic review of the email including header analysis, authentication record verification, encoded attachment decoding, and malicious IP intelligence gathering. Each step mirrors the triage and analysis process used by SOC analysts when responding to phishing alerts in enterprise environments.
-
-> **Scenario:** A suspicious email with the subject line _"A Hope to CoCanDa"_ was submitted for analysis. The task was to determine whether the email was malicious, identify the threat actor infrastructure, and document all indicators of compromise.
-
----
-
-## Investigation Overview
-
-| Field                  | Details                                            |
-| ---------------------- | -------------------------------------------------- |
-| **Investigation Type** | Phishing Email Forensics                           |
-| **Platform**           | BlueTeam Labs Online                               |
-| **Tools Used**         | MXToolbox, CyberChef, DomainTools                  |
-| **Artifacts Analyzed** | Email headers, encoded attachment, IP address      |
-| **Outcome**            | Confirmed phishing with potential malware delivery |
-
-### Methodology
-
-The investigation followed a structured triage approach:
-
-1. **Header Analysis** — Extracted and analyzed full email headers to identify the true sender, routing path, and anomalies.
-2. **Authentication Verification** — Evaluated SPF, DKIM, and DMARC records to assess sender legitimacy.
-3. **Payload Decoding** — Decoded Base64-encoded attachment content to identify the file type.
-4. **Threat Intelligence** — Performed IP reputation and geolocation lookups on the originating mail server.
-5. **IOC Documentation** — Compiled all indicators of compromise for reporting and defensive use.
+- **From:** `billjobs@microapple.com`
+- **Reply-To:** `negeja3921@pashter.com`
+- **Subject:** `A Hope to CoCanDa`
+- **Sender Domain:** `microapple.com`
+- **Originating IP:** `93.99.104.210`
+- **Attachment Encoding:** Base64
+- **Decoded File Type:** ZIP Archive (`PK` magic bytes – `50 4B 03 04`)
 
 ---
 
-## Email Metadata Analysis
+## 3. Email Metadata Analysis
 
 ### Sender Details
 
-| Field             | Value                     |
-| ----------------- | ------------------------- |
-| **From**          | `billjobs@microapple.com` |
-| **Reply-To**      | `negeja3921@pashter.com`  |
-| **Subject**       | `A Hope to CoCanDa`       |
-| **Sender Domain** | `microapple.com`          |
+| Field             | Value                        |
+|-------------------|------------------------------|
+| **From**          | `billjobs@microapple.com`    |
+| **Reply-To**      | `negeja3921@pashter.com`     |
+| **Subject**       | `A Hope to CoCanDa`          |
+| **Sender Domain** | `microapple.com`             |
 
-### Analysis
+### Key Red Flags
 
-The sender domain `microapple.com` is a clear **brand impersonation** attempt, designed to mimic Apple Inc. (`apple.com`) and potentially deceive recipients into believing the email originates from a legitimate technology company.
-
-Key red flags identified at the metadata stage:
-
-- **Domain spoofing:** `microapple.com` is not affiliated with Apple Inc. and appears crafted to exploit brand recognition.
-- **Reply-To mismatch:** The `Reply-To` address (`negeja3921@pashter.com`) differs entirely from the sender domain. This is a classic phishing tactic to redirect victim replies to an attacker-controlled inbox while the sending domain appears more credible.
-- **Unusual subject line:** `"A Hope to CoCanDa"` is semantically vague and does not correspond to any legitimate business communication pattern. Obfuscated or nonsensical subject lines are commonly used to bypass keyword-based spam filters.
-- **Numeric identifier in reply address:** The string `negeja3921` suggests an auto-generated or disposable email address, commonly associated with throwaway accounts used in phishing infrastructure.
+- **Domain spoofing:** `microapple.com` impersonates Apple Inc. (`apple.com`) — not affiliated in any way
+- **Reply-To mismatch:** Replies are silently redirected to `negeja3921@pashter.com`, an attacker-controlled inbox on a completely separate domain
+- **Obfuscated subject line:** `"A Hope to CoCanDa"` is semantically meaningless — a known tactic to bypass keyword-based spam filters
+- **Disposable reply address:** The string `negeja3921` is consistent with an auto-generated throwaway account used in phishing infrastructure
 
 ---
 
-## Email Authentication Analysis
-
-Email authentication protocols — **SPF**, **DKIM**, and **DMARC** — are used to verify that an email genuinely originates from the domain it claims to represent. Analysis of this email revealed failures across all three mechanisms.
+## 4. Email Authentication Analysis
 
 ### Results Summary
 
-| Protocol  | Result     | Implication                                                             |
-| --------- | ---------- | ----------------------------------------------------------------------- |
-| **SPF**   | ❌ FAIL    | The sending IP is not authorized by `microapple.com`                    |
-| **DKIM**  | ❌ FAIL    | Email content integrity cannot be verified; likely tampered or unsigned |
-| **DMARC** | ⚠️ MISSING | No DMARC policy exists; no enforcement or reporting in place            |
+| Protocol  | Result       | Implication                                                        |
+|-----------|--------------|--------------------------------------------------------------------|
+| **SPF**   | ❌ FAIL      | Sending IP `93.99.104.210` is not authorized by `microapple.com`   |
+| **DKIM**  | ❌ FAIL      | No valid cryptographic signature — content integrity unverifiable  |
+| **DMARC** | ⚠️ MISSING   | No policy configured — no enforcement or abuse reporting in place  |
 
-### Detailed Breakdown
+SPF failure confirms the sending IP is not an authorized mail server for the claimed domain. DKIM failure means the message cannot be verified as unmodified. The complete absence of a DMARC record suggests `microapple.com` was registered purely for malicious use — no legitimate mail infrastructure was ever set up.
 
-**SPF (Sender Policy Framework)**  
-SPF failed, meaning the IP address that sent this email (`93.99.104.210`) is **not listed** in the SPF DNS record for `microapple.com`. This is a strong indicator that the email did not originate from an authorized mail server for that domain — a hallmark of spoofed or fraudulent sending infrastructure.
+> **Note:** Triple authentication failure (SPF + DKIM + no DMARC) is one of the strongest technical signals that an email is fraudulent.
 
-**DKIM (DomainKeys Identified Mail)**  
-DKIM failed, indicating the email either **lacked a valid cryptographic signature** or the signature could not be verified. This means there is no assurance that the email content was not modified in transit, and the sender cannot be authenticated via this mechanism.
-
-**DMARC (Domain-based Message Authentication, Reporting & Conformance)**  
-No DMARC record was found for `microapple.com`. DMARC relies on both SPF and DKIM alignment — without it, there is no policy to quarantine or reject unauthenticated mail, and no reporting channel for abuse. The complete absence of DMARC suggests the domain was registered specifically for malicious use, with no intention of establishing legitimate email infrastructure.
-
-> **Analyst Note:** Triple authentication failure (SPF + DKIM + no DMARC) is one of the strongest technical indicators that an email is fraudulent. Legitimate organizations universally implement at least SPF and DKIM for their mail-sending domains.
+![MXToolbox Authentication Results](Screenshots/02_mxtoolbox_auth_results.jpg)
 
 ---
 
-## Base64 Payload Analysis
+## 5. Base64 Payload Analysis
 
-### Decoding Process
+The email contained an attachment encoded in **Base64** — a common obfuscation technique used to hide malicious file content from email security scanners and human reviewers.
 
-The email contained an **attachment encoded in Base64**, a common obfuscation technique used by threat actors to conceal malicious file content from basic email security filters and human reviewers.
+### Step 1 — Decoding with CyberChef
 
-The encoded content was extracted and submitted to **CyberChef** using the `From Base64` operation to decode the raw bytes.
+The Base64 content was extracted and loaded into **CyberChef**. The `From Base64` operation was applied first to decode the raw bytes, followed by the **`To Hex`** operation to render the output in hexadecimal — this is the critical step for identifying the true file type regardless of what the email claims the attachment to be.
 
-### Finding
+![CyberChef Base64 + Hex Output](Screenshots/03_cyberchef_base64_decode.jpg)
 
-Upon decoding, the output began with the byte sequence:
+### Step 2 — File Signature Identification via Gary Kessler's Table
+
+The attachment was presented as a **PDF file**. However, rather than accepting the file extension at face value, the hex output was cross-referenced against **[Gary Kessler's File Signatures Table](https://www.garykessler.net/library/file_sigs.html)** — a widely used reference in digital forensics that maps magic bytes to their true file types.
+
+The decoded hex output began with:
 
 ```
 50 4B 03 04
 ```
 
-This is the **magic bytes** signature for a **ZIP archive**, also known as the **PK signature** (named after Phil Katz, creator of the PKZIP format). This signature is universally recognized as the file header for `.zip`, `.docx`, `.xlsx`, `.jar`, and other ZIP-based container formats.
+Checking this against Gary Kessler's table revealed this is **not** a PDF signature. A genuine PDF file would begin with:
 
-| Indicator          | Value                                                  |
-| ------------------ | ------------------------------------------------------ |
-| **Encoding**       | Base64                                                 |
-| **Decoded Header** | `50 4B 03 04` (PK signature)                           |
-| **File Type**      | ZIP archive (or ZIP-based container)                   |
-| **Risk**           | High — ZIP files are frequently used to bundle malware |
+```
+25 50 44 46  (%PDF)
+```
 
-### Significance
+Instead, `50 4B 03 04` is the **PK magic bytes signature** — the universal file header for a **ZIP archive**.
 
-The use of Base64 encoding to disguise a ZIP file attachment is a well-documented phishing delivery technique. ZIP archives can contain:
+| Indicator            | Expected (PDF)     | Actual (Decoded)              |
+|----------------------|--------------------|-------------------------------|
+| **Claimed Type**     | PDF                | —                             |
+| **Magic Bytes**      | `25 50 44 46`      | `50 4B 03 04`                 |
+| **True File Type**   | —                  | ZIP Archive                   |
+| **Reference**        | —                  | Gary Kessler's File Signatures Table |
 
-- Executable payloads (`.exe`, `.bat`, `.ps1`)
-- Macro-enabled Office documents (`.docm`, `.xlsm`)
-- JavaScript droppers (`.js`, `.vbs`)
-- LNK shortcut files pointing to remote malicious resources
+### Step 3 — ZIP Extraction
 
-The fact that the attachment was Base64-encoded rather than attached directly suggests a deliberate attempt to **evade automated email scanning** and deliver a potentially malicious payload to the victim.
+With the file correctly identified as a ZIP archive, it was extracted. The contents yielded additional artifacts that provided further evidence to complete the challenge investigation.
+
+> **Analyst Note:** This step demonstrates why file extensions should never be trusted at face value during phishing analysis. Magic byte verification using a reference like Gary Kessler's table is a fundamental triage skill — it reveals what a file truly is, not what an attacker wants you to think it is.
 
 ---
 
-## IP Address Investigation
+## 6. IP Address Investigation
 
 ### Target IP: `93.99.104.210`
 
-The originating IP address of the email was investigated using **DomainTools** for geolocation, ASN attribution, and hosting context.
+| Field              | Details                                             |
+|--------------------|-----------------------------------------------------|
+| **IP Address**     | `93.99.104.210`                                     |
+| **Country**        | Latvia 🇱🇻                                           |
+| **Hosting Type**   | Commercial VPS / hosting provider                   |
+| **Association**    | No affiliation with Apple Inc. or legitimate mail providers |
 
-### Intelligence Summary
+The originating IP belongs to a commercial VPS provider in Latvia — a jurisdiction with no plausible connection to an Apple-branded sender. Threat actors routinely use VPS providers for phishing infrastructure due to easy provisioning and relative anonymity. The IP has no established reputation as a legitimate mail server, which further confirms fraudulent origin.
 
-| Field            | Details                                                              |
-| ---------------- | -------------------------------------------------------------------- |
-| **IP Address**   | `93.99.104.210`                                                      |
-| **Country**      | Latvia 🇱🇻                                                            |
-| **ASN**          | Identified via DomainTools                                           |
-| **Hosting Type** | Commercial hosting / VPS provider                                    |
-| **Legitimacy**   | No association with Apple Inc. or any known legitimate mail provider |
-
-### Analysis
-
-The use of a **Latvian IP address** for an email impersonating an Apple-adjacent brand has no plausible legitimate explanation. Key observations:
-
-- The IP belongs to a **commercial hosting or VPS provider**, which are commonly used by threat actors due to their ease of provisioning and relative anonymity.
-- The geographic origin (Eastern Europe) is inconsistent with Apple's legitimate email infrastructure, which originates from Apple-owned or well-established cloud provider address spaces in the United States.
-- The IP has **no established reputation** as a legitimate mail server, further corroborating the fraudulent nature of the email.
-
-> **Analyst Note:** Legitimate transactional emails from major technology companies originate from verified, high-reputation IP ranges. An unknown IP in a jurisdiction unrelated to the impersonated brand is a reliable indicator of phishing infrastructure.
+![DomainTools IP Lookup](Screenshots/04_domaintools_ip_lookup.jpg)
 
 ---
 
-## Indicators of Compromise (IOCs)
+## 7. Indicators of Compromise (IOCs)
 
-The following IOCs were identified during this investigation and should be used for detection, blocking, and threat hunting purposes.
-
-| IOC Type          | Value                        | Description                                      |
-| ----------------- | ---------------------------- | ------------------------------------------------ |
-| **IP Address**    | `93.99.104.210`              | Originating mail server IP — Latvia              |
-| **Domain**        | `microapple.com`             | Sender domain — Apple brand impersonation        |
-| **Domain**        | `pashter.com`                | Reply-To domain — attacker-controlled inbox      |
-| **Email Address** | `billjobs@microapple.com`    | Sender email address                             |
-| **Email Address** | `negeja3921@pashter.com`     | Reply-To address — attacker-controlled           |
-| **Subject Line**  | `A Hope to CoCanDa`          | Phishing email subject — used for filter evasion |
-| **File Type**     | ZIP Archive (Base64 encoded) | Attachment — potential malware delivery vehicle  |
-
-### MITRE ATT&CK Mapping
-
-| Technique ID | Technique Name                     | Observed Behavior                             |
-| ------------ | ---------------------------------- | --------------------------------------------- |
-| T1566.001    | Phishing: Spearphishing Attachment | Malicious ZIP attachment delivered via email  |
-| T1036        | Masquerading                       | Domain impersonating Apple (`microapple.com`) |
-| T1027        | Obfuscated Files or Information    | Attachment encoded in Base64                  |
-| T1071.003    | Application Layer Protocol: Mail   | Email used as initial access vector           |
+| IOC Type           | Value                         | Description                                      |
+|--------------------|-------------------------------|--------------------------------------------------|
+| **IP Address**     | `93.99.104.210`               | Originating mail server — Latvia VPS             |
+| **Domain**         | `microapple.com`              | Sender domain — Apple brand impersonation        |
+| **Domain**         | `pashter.com`                 | Reply-To domain — attacker-controlled inbox      |
+| **Email Address**  | `billjobs@microapple.com`     | Sender address                                   |
+| **Email Address**  | `negeja3921@pashter.com`      | Reply-To address — attacker-controlled           |
+| **Subject Line**   | `A Hope to CoCanDa`           | Phishing lure — filter evasion via vague wording |
+| **File Type**      | ZIP Archive (Base64-encoded)  | Attachment — potential malware delivery vehicle  |
 
 ---
 
-## Attack Analysis
+## 8. MITRE ATT&CK Mapping
 
-### Threat Actor Objective
+| Tactic             | Technique ID  | Technique Name                         |
+|--------------------|---------------|----------------------------------------|
+| Initial Access     | T1566.001     | Phishing: Spearphishing Attachment     |
+| Defense Evasion    | T1036         | Masquerading (domain impersonation)    |
+| Defense Evasion    | T1027         | Obfuscated Files or Information        |
+| Command & Control  | T1071.003     | Application Layer Protocol: Mail       |
 
-Based on the evidence gathered, this email represents a **phishing attack with a malware delivery component**. The threat actor's likely objectives were:
+---
 
-1. **Initial Access via Social Engineering**  
-   The email impersonates a trusted Apple-affiliated entity to establish credibility. The vague but intriguing subject line (_"A Hope to CoCanDa"_) may be designed to trigger curiosity-driven opens, bypassing the recipient's skepticism.
+## 9. Attack Analysis
 
-2. **Credential Harvesting or Malware Execution**  
-   The Base64-encoded ZIP attachment is the primary delivery mechanism. Depending on the contents of the archive, the attacker may have been attempting to:
-
-   - Execute a **dropper or loader** to establish persistence
-   - Deliver a **Remote Access Trojan (RAT)** or **infostealer**
-   - Direct victims to a **credential phishing page** via a URL within the attachment
-
-3. **Reply-To Redirection**  
-   The mismatch between the `From` and `Reply-To` addresses serves a dual purpose: it routes any victim responses to an attacker-controlled mailbox (`negeja3921@pashter.com`) while keeping the sending domain appearing more contextually relevant to the impersonated brand.
-
-### Attack Chain
+This email represents a **phishing attack with a malware delivery component**. The likely attack chain:
 
 ```
-[Attacker sends email from 93.99.104.210]
+[Attacker sends from 93.99.104.210 — Latvia VPS]
         │
         ▼
-[Spoofed domain: microapple.com | SPF/DKIM/DMARC failures]
+[Spoofed domain: microapple.com — Apple impersonation]
+[SPF fail | DKIM fail | No DMARC]
         │
         ▼
-[Victim receives email — persuaded by Apple brand impersonation]
+[Victim receives email — tricked by Apple brand association]
         │
         ▼
 [Victim opens Base64-encoded ZIP attachment]
         │
         ▼
-[ZIP payload executes — potential malware installation or credential theft]
+[ZIP executes payload — potential malware installation or credential theft]
         │
         ▼
-[Any victim replies routed to attacker inbox: negeja3921@pashter.com]
+[Any victim replies routed silently to: negeja3921@pashter.com]
 ```
 
----
-
-## Detection and Mitigation
-
-### Recommended Defensive Actions
-
-**Immediate Response (Tactical)**
-
-- 🔴 **Block IP** `93.99.104.210` at the email gateway and perimeter firewall
-- 🔴 **Block domains** `microapple.com` and `pashter.com` in DNS filtering and email security platforms
-- 🔴 **Quarantine** any emails matching the subject line `"A Hope to CoCanDa"` across the mail environment
-- 🔴 **Alert** end users who may have received or interacted with this email
-
-**Email Security Controls (Strategic)**
-
-| Control                   | Recommendation                                                                   |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| **SPF Enforcement**       | Configure email gateway to quarantine or reject SPF-failing inbound mail         |
-| **DKIM Verification**     | Enforce DKIM signature validation; flag unsigned or unverifiable messages        |
-| **DMARC Policy**          | Reject unauthenticated mail from impersonated domains (`p=reject`)               |
-| **Attachment Sandboxing** | Detonate ZIP and encoded attachments in a sandboxed environment before delivery  |
-| **Base64 Scanning**       | Configure DLP/email security to scan and decode Base64-encoded attachments       |
-| **Reply-To Alerting**     | Flag emails where the `Reply-To` domain differs significantly from `From` domain |
-
-**User Awareness**
-
-- Train users to verify sender domains carefully — `microapple.com` ≠ `apple.com`
-- Educate staff on the risk of opening unexpected attachments, even from apparently familiar senders
-- Establish a clear process for reporting suspicious emails to the SOC
+The Reply-To mismatch serves a dual purpose: it routes victim responses to an attacker-controlled inbox while keeping the visible sender domain contextually relevant to the impersonated brand.
 
 ---
 
-## Conclusion
+## 10. Detection and Mitigation
 
-This investigation confirmed that the email submitted for analysis is a **phishing attack** exhibiting multiple, corroborating indicators of malicious intent:
+**Immediate Actions**
 
-- ✅ **Brand impersonation** via a fraudulent sender domain (`microapple.com`)
-- ✅ **Triple authentication failure** — SPF failed, DKIM failed, DMARC absent
-- ✅ **Reply-To hijacking** to redirect victim communications to attacker infrastructure
-- ✅ **Obfuscated malicious attachment** — Base64-encoded ZIP file indicating payload delivery intent
-- ✅ **Suspicious originating infrastructure** — Commercial VPS in Latvia with no affiliation to the impersonated brand
+- 🔴 Block IP `93.99.104.210` at the email gateway and perimeter firewall
+- 🔴 Block domains `microapple.com` and `pashter.com` in DNS filtering and email security
+- 🔴 Quarantine any emails matching subject `"A Hope to CoCanDa"`
+- 🔴 Alert users who may have received or interacted with this email
 
-The combination of brand impersonation, authentication failures, encoded payload delivery, and attacker-controlled reply infrastructure represents a **well-structured, multi-layered phishing campaign**. The email should be classified as **malicious**, and all associated IOCs should be immediately actioned across relevant security controls.
+**Strategic Controls**
 
----
-
-## Screenshots
-
-> 📌 _Replace each placeholder below with your actual investigation screenshots._
-
-### Email Header Analysis — MXToolbox
-
-![Email Header Analysis](./screenshots/01-email-header-mxtoolbox.jpg)
-
-> _Caption: Full email header analysis performed in MXToolbox, showing routing hops, sender IP, and header anomalies._
+| Control                   | Recommendation                                                                  |
+|---------------------------|---------------------------------------------------------------------------------|
+| **SPF Enforcement**       | Quarantine or reject SPF-failing inbound mail at the gateway                   |
+| **DKIM Verification**     | Flag unsigned or unverifiable messages for analyst review                       |
+| **DMARC Policy**          | Enforce `p=reject` on impersonated domains                                      |
+| **Attachment Sandboxing** | Detonate ZIP and encoded attachments in a sandbox before delivery               |
+| **Base64 Scanning**       | Configure DLP/email security to decode and inspect Base64-encoded attachments   |
+| **Reply-To Alerting**     | Flag emails where Reply-To domain differs significantly from the From domain    |
 
 ---
 
-### Base64 Decoding — CyberChef
+## 11. Final Verdict
 
-![CyberChef Base64 Decode](./screenshots/02-cyberchef-base64-decode.jpg)
+- **True Positive** — Phishing confirmed
+- Apple brand impersonation via fraudulent sender domain (`microapple.com`)
+- Triple authentication failure: SPF ❌ DKIM ❌ DMARC ⚠️ missing
+- Base64-encoded ZIP attachment indicating payload delivery intent
+- Originating infrastructure: commercial VPS in Latvia with no legitimate mail history
+- Reply-To hijacking to redirect victim communications to attacker inbox
 
-> _Caption: CyberChef `From Base64` operation applied to attachment content, revealing the ZIP file PK magic bytes signature._
-
----
-
-### IP Intelligence Lookup — DomainTools
-
-![DomainTools IP Lookup](./screenshots/03-domaintools-ip-lookup.jpg)
-
-> _Caption: DomainTools investigation of IP address `93.99.104.210`, showing geolocation (Latvia), ASN, and hosting details._
+The email is malicious. All associated IOCs should be actioned across relevant security controls.
 
 ---
 
-### Email Authentication Results — MXToolbox
+## 12. Certification
 
-![MXToolbox Authentication Results](./screenshots/04-mxtoolbox-auth-results.jpg)
+![BlueTeam Labs Certificate](Screenshots/certificate_btlo.jpg)
 
-> _Caption: MXToolbox results confirming SPF failure, DKIM failure, and missing DMARC record for `microapple.com`._
-
----
-
-## Certification
-
-> 📌 _Insert a screenshot of your certificate below, or link directly to the verification page._
-
-![BlueTeam Labs Certificate](./screenshots/certificate-btlo.jpg)
-
-| Field                | Details                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| **Recipient**        | Thembinkosi Madiba                                                                    |
-| **Challenge**        | The Planet's Prestige                                                                 |
-| **Platform**         | BlueTeam Labs Online                                                                  |
-| **Category**         | CTF                                                                                   |
-| **Difficulty**       | Easy                                                                                  |
-| **Points Awarded**   | 10                                                                                    |
-| **Completed**        | March 12, 2026                                                                        |
+| Field                | Details                                                                          |
+|----------------------|----------------------------------------------------------------------------------|
+| **Recipient**        | Thembinkosi Madiba                                                               |
+| **Challenge**        | The Planet's Prestige                                                            |
+| **Platform**         | BlueTeam Labs Online                                                             |
+| **Category**         | CTF                                                                              |
+| **Difficulty**       | Easy                                                                             |
+| **Points Awarded**   | 10                                                                               |
+| **Completed**        | March 12, 2026                                                                   |
 | **Verification URL** | [View Certificate](https://blueteamlabs.online/achievement/share/challenge/149863/10) |
-| **Status**           | ✅ Completed                                                                          |
 
 ---
 
-## Skills Demonstrated
+## 13. Skills Demonstrated
 
-| Skill                                    | Description                                                                                    |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Email Header Analysis**                | Extracted and interpreted full email headers to trace the delivery path and identify anomalies |
-| **Phishing Detection**                   | Identified brand impersonation, Reply-To mismatches, and obfuscated subject lines              |
-| **Email Authentication Analysis**        | Evaluated SPF, DKIM, and DMARC records to assess sender legitimacy                             |
-| **Base64 Decoding**                      | Used CyberChef to decode encoded attachment content and identify file type via magic bytes     |
-| **Magic Byte / File Signature Analysis** | Identified ZIP file header (`50 4B 03 04`) from raw decoded bytes                              |
-| **Threat Intelligence Investigation**    | Conducted IP reputation, geolocation, and ASN analysis using DomainTools                       |
-| **IOC Identification & Documentation**   | Compiled structured IOC table with IPs, domains, email addresses, and file indicators          |
-| **MITRE ATT&CK Mapping**                 | Mapped observed attacker behaviors to relevant ATT&CK technique IDs                            |
-| **Defensive Recommendations**            | Produced actionable detection and mitigation guidance for SOC teams                            |
-
----
-
-## Tools Used
-
-| Tool                     | Purpose                                           | Link                                                         |
-| ------------------------ | ------------------------------------------------- | ------------------------------------------------------------ |
-| **MXToolbox**            | Email header analysis and authentication checks   | [mxtoolbox.com](https://mxtoolbox.com)                       |
-| **CyberChef**            | Base64 decoding and file signature identification | [gchq.github.io/CyberChef](https://gchq.github.io/CyberChef) |
-| **DomainTools**          | IP address intelligence and geolocation lookup    | [domaintools.com](https://domaintools.com)                   |
-| **BlueTeam Labs Online** | Phishing investigation challenge platform         | [blueteamlabs.online](https://blueteamlabs.online)           |
+- Email header analysis
+- Phishing detection and triage
+- Email authentication analysis (SPF, DKIM, DMARC)
+- Base64 decoding
+- Hex analysis using CyberChef
+- Magic byte / file signature verification (Gary Kessler's File Signatures Table)
+- File type spoofing detection
+- ZIP archive extraction and artifact analysis
+- IP threat intelligence and geolocation
+- IOC identification and documentation
+- MITRE ATT&CK mapping
+- Defensive recommendations for SOC teams
 
 ---
 
-<div align="center">
+## 14. Tools Used
 
-**📁 Part of my Cybersecurity Portfolio**  
-_Documenting real-world blue team investigations, threat analysis, and SOC workflows._
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=flat&logo=linkedin)](https://linkedin.com/in/YOUR-PROFILE)
-[![GitHub](https://img.shields.io/badge/GitHub-Portfolio-black?style=flat&logo=github)](https://github.com/YOUR-USERNAME)
-
-</div>
+| Tool                              | Purpose                                                         |
+|-----------------------------------|-----------------------------------------------------------------|
+| **MXToolbox**                     | Email header analysis and authentication checks                 |
+| **CyberChef**                     | Base64 decoding and hex conversion for file type identification |
+| **Gary Kessler's File Signatures**| Magic bytes reference for true file type verification           |
+| **DomainTools**                   | IP intelligence and geolocation lookup                          |
+| **BlueTeam Labs Online**          | CTF challenge platform                                          |
