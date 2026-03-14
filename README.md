@@ -18,8 +18,6 @@ The email arrived with a vague subject line, a mismatched Reply-To address, and 
 
 The investigation confirmed this is a **phishing email with a potential malware delivery component**, targeting recipients through Apple brand impersonation.
 
-![MXToolbox Authentication Results](BlueTeam-Labs-Online-The-Planets-Prestige/screenshots/Challenge.png)
-
 ---
 
 ## 2. Alert Metadata
