@@ -26,7 +26,7 @@ The investigation confirmed this is a **phishing email with a potential malware 
 - **Reply-To:** `negeja3921@pashter.com`
 - **Subject:** `A Hope to CoCanDa`
 - **Sender Domain:** `microapple.com`
-- **Originating IP:** `93.99.104.210`
+- **Originating IP:** `93[.]99[.]104[.]210`
 - **Attachment Encoding:** Base64
 - **Decoded File Type:** ZIP Archive (`PK` magic bytes – `50 4B 03 04`)
 
@@ -58,7 +58,7 @@ The investigation confirmed this is a **phishing email with a potential malware 
 
 | Protocol  | Result       | Implication                                                        |
 |-----------|--------------|--------------------------------------------------------------------|
-| **SPF**   | ❌ FAIL      | Sending IP `93.99.104.210` is not authorized by `microapple.com`   |
+| **SPF**   | ❌ FAIL      | Sending IP `93[.]99[.]104[.]210` is not authorized by `microapple.com`   |
 | **DKIM**  | ❌ FAIL      | No valid cryptographic signature — content integrity unverifiable  |
 | **DMARC** | ⚠️ MISSING   | No policy configured — no enforcement or abuse reporting in place  |
 
@@ -115,11 +115,11 @@ With the file correctly identified as a ZIP archive, it was extracted. The conte
 
 ## 6. IP Address Investigation
 
-### Target IP: `93.99.104.210`
+### Target IP: `93[.]99[.]104[.]210`
 
 | Field              | Details                                             |
 |--------------------|-----------------------------------------------------|
-| **IP Address**     | `93.99.104.210`                                     |
+| **IP Address**     | `93[.]99[.]104[.]210`                                     |
 | **Country**        | Latvia 🇱🇻                                           |
 | **Hosting Type**   | Commercial VPS / hosting provider                   |
 | **Association**    | No affiliation with Apple Inc. or legitimate mail providers |
@@ -134,7 +134,7 @@ The originating IP belongs to a commercial VPS provider in Latvia — a jurisdic
 
 | IOC Type           | Value                         | Description                                      |
 |--------------------|-------------------------------|--------------------------------------------------|
-| **IP Address**     | `93.99.104.210`               | Originating mail server — Latvia VPS             |
+| **IP Address**     | `93[.]99[.]104[.]210`               | Originating mail server — Latvia VPS             |
 | **Domain**         | `microapple.com`              | Sender domain — Apple brand impersonation        |
 | **Domain**         | `pashter.com`                 | Reply-To domain — attacker-controlled inbox      |
 | **Email Address**  | `billjobs@microapple.com`     | Sender address                                   |
@@ -160,7 +160,7 @@ The originating IP belongs to a commercial VPS provider in Latvia — a jurisdic
 This email represents a **phishing attack with a malware delivery component**. The likely attack chain:
 
 ```
-[Attacker sends from 93.99.104.210 — Latvia VPS]
+[Attacker sends from 93[.]99[.]104[.]210 — Latvia VPS]
         │
         ▼
 [Spoofed domain: microapple.com — Apple impersonation]
@@ -187,7 +187,7 @@ The Reply-To mismatch serves a dual purpose: it routes victim responses to an at
 
 **Immediate Actions**
 
-- 🔴 Block IP `93.99.104.210` at the email gateway and perimeter firewall
+- 🔴 Block IP `93[.]99[.]104[.]210` at the email gateway and perimeter firewall
 - 🔴 Block domains `microapple.com` and `pashter.com` in DNS filtering and email security
 - 🔴 Quarantine any emails matching subject `"A Hope to CoCanDa"`
 - 🔴 Alert users who may have received or interacted with this email
