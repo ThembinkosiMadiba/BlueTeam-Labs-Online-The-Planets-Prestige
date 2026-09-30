@@ -1,4 +1,4 @@
-# Phishing Email Investigation – The Planet's Prestige (BTLO)
+# Phishing Email Investigation - The Planet's Prestige (BTLO)
 
 **Platform:** BlueTeam Labs Online  
 **Challenge:** The Planet's Prestige  
